@@ -3,33 +3,39 @@ const app = express();
 const uuid = require('uuid');
 
 const logs = require('../middleware/logs');
+const Cliente = require('../models/cliente');
 
-let clientes = [];
+// let clientes = [];
 
 // Get para todos los registros
 
 app.get('/', (req, res) => {
-    // res.status(200).send(clientes); No se suele utilizar
-    res.status(200).json({
-        mensaje: 'ok',
-        clientes // equivalente a clientes: clientes
+    Cliente.find({}).exec((err, data) =>  {
+        res.status(200).json({
+            mensaje: 'ok',
+            clientes: data
+        })
     })
 })
 
 // Get con parámetros (route-params) se definen con ruta/:nombreparametro/:nombreparametro
 
 app.get('/cliente-id/:_id', (req, res) => {
-    let cliente = clientes.find(elem => {
-        return elem._id === req.params._id;
-    })
-    if(cliente === undefined) {
-        return res.status(404).json({
-            mensaje: 'No se encontró ningún cliente con ese _id'
+    Cliente.findById(req.params._id, (err, data) => {
+        if(err) {
+            return res.status(500).json({
+                mensaje: 'El servidor no se encuentra disponible'
+            })
+        }
+        if(!data || data === null) {
+            return res.status(404).json({
+                mensaje: 'No se encontró ningún cliente con ese _id'
+            })
+        }
+        res.status(200).json({
+            mensaje: 'ok',
+            cliente: data
         })
-    }
-    res.status(200).json({
-        mensaje: 'ok',
-        cliente
     })
 })
 
@@ -56,7 +62,6 @@ app.post('/', logs.createLog, (req, res) => {
             mensaje: 'Datos de cliente no válido'
         })
     }
-    console.log(req.body);
     let cliente = req.body;
     cliente._id = uuid.v4();
     cliente.nombre = cliente.nombre.toLowerCase();
